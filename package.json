@@ -1,5 +1,5 @@
 {
-  "name": "flakeenv",
+  "name": "flake-env",
   "displayName": "FlakeEnv",
   "description": "Automatically loads environment variables from flake.nix (nix develop) and .envrc (direnv) into your VS Code workspace.",
   "version": "0.1.0",
@@ -40,9 +40,9 @@
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "package": "pnpm run check-types && node esbuild.js --production",
     "check-types": "tsc --noEmit",
-    "vsix": "vsce package --no-dependencies --out flakeenv.vsix",
-    "publish:marketplace": "vsce publish --packagePath flakeenv.vsix",
-    "publish:open-vsx": "ovsx publish flakeenv.vsix"
+    "vsix": "vsce package --no-dependencies --out flake-env.vsix",
+    "publish:marketplace": "vsce publish --packagePath flake-env.vsix",
+    "publish:open-vsx": "ovsx publish flake-env.vsix"
   },
   "devDependencies": {
     "@types/node": "22.x",

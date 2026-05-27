@@ -47,7 +47,7 @@ jobs:
         run: nix develop -c pnpm run vsix
 
       - name: Upload VSIX to GitHub release
-        run: nix develop -c gh release upload "$RELEASE_TAG" flakeenv.vsix --clobber
+        run: nix develop -c gh release upload "$RELEASE_TAG" flake-env.vsix --clobber
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
