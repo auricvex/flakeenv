@@ -1,0 +1,59 @@
+{
+  "name": "flakeenv",
+  "displayName": "FlakeEnv",
+  "description": "Automatically loads environment variables from flake.nix (nix develop) and .envrc (direnv) into your VS Code workspace.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "icon": "icon.png",
+  "publisher": "auricvex",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/auricvex/flakeenv"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:flake.nix",
+    "workspaceContains:.envrc"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "flakeenv.reload",
+        "title": "FlakeEnv: Reload Environment"
+      },
+      {
+        "command": "flakeenv.openDashboard",
+        "title": "FlakeEnv: Open Dashboard"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && node esbuild.js",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "vsix": "vsce package --no-dependencies --out flakeenv.vsix",
+    "publish:marketplace": "vsce publish --packagePath flakeenv.vsix",
+    "publish:open-vsx": "ovsx publish flakeenv.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "22.x",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@types/vscode": "^1.100.0",
+    "@vscode/vsce": "^3.9.1",
+    "esbuild": "^0.27.3",
+    "ovsx": "^0.10.12",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "typescript": "^5.9.3"
+  }
+}

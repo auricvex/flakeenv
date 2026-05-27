@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-extension-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to extension registries
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Install dependencies
+        run: nix develop -c pnpm install --frozen-lockfile
+
+      - name: Verify release tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          package_version="$(nix develop -c node -p 'require("./package.json").version')"
+          release_version="${RELEASE_TAG#v}"
+
+          if [ "$package_version" != "$release_version" ]; then
+            echo "::error::Release tag '$RELEASE_TAG' does not match package.json version '$package_version'."
+            exit 1
+          fi
+
+      - name: Package VSIX
+        run: nix develop -c pnpm run vsix
+
+      - name: Upload VSIX to GitHub release
+        run: nix develop -c gh release upload "$RELEASE_TAG" flakeenv.vsix --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+      # - name: Publish to VS Code Marketplace
+      #   run: nix develop -c pnpm run publish:marketplace
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        run: nix develop -c pnpm run publish:open-vsx
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
