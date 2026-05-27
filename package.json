@@ -1,6 +1,6 @@
 {
   "name": "flake-env",
-  "displayName": "FlakeEnv",
+  "displayName": "Flake Env",
   "description": "Automatically loads environment variables from flake.nix (nix develop) and .envrc (direnv) into your VS Code workspace.",
   "version": "0.1.0",
   "license": "MIT",
@@ -25,11 +25,11 @@
     "commands": [
       {
         "command": "flakeenv.reload",
-        "title": "FlakeEnv: Reload Environment"
+        "title": "Flake Env: Reload Environment"
       },
       {
         "command": "flakeenv.openDashboard",
-        "title": "FlakeEnv: Open Dashboard"
+        "title": "Flake Env: Open Dashboard"
       }
     ]
   },
