@@ -52,10 +52,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
 
-      - name: Publish to VS Code Marketplace
-        run: nix develop -c pnpm run publish:marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      # - name: Publish to VS Code Marketplace
+      #   run: nix develop -c pnpm run publish:marketplace
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX
         run: nix develop -c pnpm run publish:open-vsx
