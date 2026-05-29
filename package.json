@@ -2,7 +2,7 @@
   "name": "flake-env",
   "displayName": "Flake Env",
   "description": "Automatically loads environment variables from flake.nix (nix develop) and .envrc (direnv) into your VS Code workspace.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "icon": "icon.png",
   "publisher": "auricvex",

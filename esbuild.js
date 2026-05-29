@@ -44,6 +44,9 @@ async function main() {
 			platform: 'node',
 			outfile: 'dist/extension.js',
 			external: ['vscode'],
+			loader: {
+				'.css': 'text',
+			},
 			logLevel: 'silent',
 			plugins: [
 				esbuildProblemMatcherPlugin,
