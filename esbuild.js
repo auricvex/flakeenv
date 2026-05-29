@@ -64,6 +64,9 @@ async function main() {
 			define: {
 				'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development'),
 			},
+			loader: {
+				'.css': 'text',
+			},
 			logLevel: 'silent',
 			plugins: [
 				esbuildProblemMatcherPlugin,

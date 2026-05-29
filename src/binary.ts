@@ -8,18 +8,18 @@ import * as os from 'os';
 
 /** Common locations where nix is installed on macOS / Linux. */
 export const NIX_SEARCH_PATHS = [
-    '/nix/var/nix/profiles/default/bin',
-    path.join(os.homedir(), '.nix-profile/bin'),
-    '/run/current-system/sw/bin',
+	'/nix/var/nix/profiles/default/bin',
+	path.join(os.homedir(), '.nix-profile/bin'),
+	'/run/current-system/sw/bin',
 ];
 
 /** Common locations where direnv may be installed. */
 export const DIRENV_SEARCH_PATHS = [
-    '/nix/var/nix/profiles/default/bin',
-    path.join(os.homedir(), '.nix-profile/bin'),
-    '/run/current-system/sw/bin',
-    '/opt/homebrew/bin',
-    '/usr/local/bin',
+	'/nix/var/nix/profiles/default/bin',
+	path.join(os.homedir(), '.nix-profile/bin'),
+	'/run/current-system/sw/bin',
+	'/opt/homebrew/bin',
+	'/usr/local/bin',
 ];
 
 // ---------------------------------------------------------------------------
@@ -31,35 +31,39 @@ export const DIRENV_SEARCH_PATHS = [
  * well-known installation paths. This handles VS Code launched from Finder
  * where /nix/... paths are not in PATH.
  */
-export function findBinary(name: string, extraPaths: string[], log?: (msg: string) => void): string | null {
-    // 1. Check if it's directly available in current PATH
-    const pathDirs = (process.env.PATH ?? '').split(path.delimiter);
-    for (const dir of pathDirs) {
-        const candidate = path.join(dir, name);
-        if (isExecutable(candidate)) {
-            return candidate;
-        }
-    }
+export function findBinary(
+	name: string,
+	extraPaths: string[],
+	log?: (msg: string) => void,
+): string | null {
+	// 1. Check if it's directly available in current PATH
+	const pathDirs = (process.env.PATH ?? '').split(path.delimiter);
+	for (const dir of pathDirs) {
+		const candidate = path.join(dir, name);
+		if (isExecutable(candidate)) {
+			return candidate;
+		}
+	}
 
-    // 2. Check well-known locations
-    for (const dir of extraPaths) {
-        const candidate = path.join(dir, name);
-        if (isExecutable(candidate)) {
-            log?.(`Found \`${name}\` at ${candidate} (not in PATH, using well-known location)`);
-            return candidate;
-        }
-    }
+	// 2. Check well-known locations
+	for (const dir of extraPaths) {
+		const candidate = path.join(dir, name);
+		if (isExecutable(candidate)) {
+			log?.(`Found \`${name}\` at ${candidate} (not in PATH, using well-known location)`);
+			return candidate;
+		}
+	}
 
-    return null;
+	return null;
 }
 
 export function isExecutable(filePath: string): boolean {
-    try {
-        fs.accessSync(filePath, fs.constants.X_OK);
-        return true;
-    } catch {
-        return false;
-    }
+	try {
+		fs.accessSync(filePath, fs.constants.X_OK);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -67,7 +71,7 @@ export function isExecutable(filePath: string): boolean {
  * This ensures child processes (like `nix develop`) can find tools.
  */
 export function enrichPath(extraPaths: string[]): { PATH: string } {
-    const currentPath = process.env.PATH ?? '';
-    const extra = extraPaths.filter(p => !currentPath.includes(p));
-    return { PATH: [...extra, currentPath].join(path.delimiter) };
+	const currentPath = process.env.PATH ?? '';
+	const extra = extraPaths.filter((p) => !currentPath.includes(p));
+	return { PATH: [...extra, currentPath].join(path.delimiter) };
 }

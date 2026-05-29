@@ -2,6 +2,15 @@
 
 FlakeEnv automatically loads environment variables from `flake.nix` and `.envrc` into your VS Code workspace, so integrated terminals, tasks, debuggers, and language servers see the same tools your shell sees.
 
+## Installation
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=auricvex.flake-env) or [Open VSX](https://open-vsx.org/extension/auricvex/flake-env):
+
+1. Open VS Code
+2. Press `Cmd+Shift+X` (or `Ctrl+Shift+X`) to open the Extensions panel
+3. Search for **Flake Env**
+4. Click **Install**
+
 ## Features
 
 - Loads `flake.nix` with `nix print-dev-env . --json`.
@@ -75,6 +84,23 @@ FlakeEnv blocks variables that are usually unsafe or noisy to inject into VS Cod
 - Nix build internals such as `__*`, `NIX_BUILD_*`, and `IN_NIX_SHELL`.
 
 Skipped variables are still visible in the dashboard with their skip reason.
+
+## Settings
+
+All settings are optional and have sensible defaults. Configure them in VS Code settings (`Cmd+,` or `Preferences: Open Settings`) under `flakeenv`.
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `flakeenv.autoReload` | boolean | `true` | Watch `flake.nix` and `.envrc` for changes and automatically reload. |
+| `flakeenv.autoReloadDebounceMs` | number | `1000` | Debounce interval (ms) for auto-reload file change detection. |
+| `flakeenv.additionalBlockedVars` | string[] | `[]` | Extra environment variable names to skip beyond the built-in blocklist. |
+| `flakeenv.additionalBlockedPrefixes` | string[] | `[]` | Extra variable name prefixes to skip beyond the built-in blocklist. |
+| `flakeenv.languageServers` | array | `[]` | Additional language servers to restart after injection. Merged with built-in defaults (rust-analyzer, CodeLLDB). |
+| `flakeenv.execTimeoutMs` | number | `120000` | Timeout in milliseconds for nix and direnv commands. |
+
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, development workflow, and PR guidelines.
 
 ## License
 

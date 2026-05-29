@@ -2,7 +2,7 @@
   "name": "flake-env",
   "displayName": "Flake Env",
   "description": "Automatically loads environment variables from flake.nix (nix develop) and .envrc (direnv) into your VS Code workspace.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "icon": "icon.png",
   "publisher": "auricvex",
@@ -31,7 +31,57 @@
         "command": "flakeenv.openDashboard",
         "title": "Flake Env: Open Dashboard"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "FlakeEnv",
+      "properties": {
+        "flakeenv.autoReload": {
+          "type": "boolean",
+          "default": true,
+          "description": "Watch flake.nix and .envrc for changes and automatically reload the environment."
+        },
+        "flakeenv.autoReloadDebounceMs": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 200,
+          "maximum": 10000,
+          "description": "Debounce interval in milliseconds for auto-reload file change detection."
+        },
+        "flakeenv.additionalBlockedVars": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra environment variable names to skip beyond the built-in blocklist."
+        },
+        "flakeenv.additionalBlockedPrefixes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra variable name prefixes to skip beyond the built-in blocklist."
+        },
+        "flakeenv.languageServers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "extensionId": { "type": "string", "description": "VS Code extension ID" },
+              "command": { "type": "string", "description": "Restart command to execute" },
+              "name": { "type": "string", "description": "Display name for logging" }
+            },
+            "required": ["extensionId", "command", "name"]
+          },
+          "default": [],
+          "description": "Additional language servers to restart after environment injection. Merged with built-in defaults (rust-analyzer, CodeLLDB)."
+        },
+        "flakeenv.execTimeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 5000,
+          "maximum": 600000,
+          "description": "Timeout in milliseconds for nix and direnv commands."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",
@@ -39,21 +89,35 @@
     "watch:esbuild": "node esbuild.js --watch",
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "package": "pnpm run check-types && node esbuild.js --production",
+    "build": "pnpm run check-types && node esbuild.js --production",
     "check-types": "tsc --noEmit",
+    "lint": "eslint src/",
+    "format": "prettier --write src/",
+    "format:check": "prettier --check src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "vsix": "vsce package --no-dependencies --out flake-env.vsix",
     "publish:marketplace": "vsce publish --packagePath flake-env.vsix",
     "publish:open-vsx": "ovsx publish flake-env.vsix"
   },
   "devDependencies": {
+    "@eslint/js": "^9.27.0",
     "@types/node": "22.x",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.100.0",
+    "@vitest/coverage-v8": "^3.1.4",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.27.3",
+    "eslint": "^9.27.0",
+    "eslint-plugin-react": "^7.37.5",
     "ovsx": "^0.10.12",
+    "prettier": "^3.5.3",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.33.0",
+    "vitest": "^3.1.4"
   }
 }

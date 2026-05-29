@@ -1,19 +1,11 @@
 import * as vscode from 'vscode';
-import { loadEnvironment, type EnvironmentResult } from './environment';
+import { loadEnvironment, type EnvironmentResult, type LoadConfig } from './environment';
 import { DashboardPanel } from './dashboard';
-
-// ---------------------------------------------------------------------------
-// Known language servers to restart after environment injection
-// ---------------------------------------------------------------------------
-
-const KNOWN_LANGUAGE_SERVERS: ReadonlyArray<{
-	extensionId: string;
-	command: string;
-	name: string;
-}> = [
-		{ extensionId: 'rust-lang.rust-analyzer', command: 'rust-analyzer.restartServer', name: 'rust-analyzer' },
-		{ extensionId: 'vadimcn.vscode-lldb', command: 'lldb.restart', name: 'CodeLLDB' },
-	];
+import {
+	getLanguageServers,
+	restartLanguageServers,
+	type LanguageServer,
+} from './language-servers';
 
 // ---------------------------------------------------------------------------
 // State
@@ -22,6 +14,8 @@ const KNOWN_LANGUAGE_SERVERS: ReadonlyArray<{
 let outputChannel: vscode.OutputChannel;
 let statusBarItem: vscode.StatusBarItem;
 let isLoading = false;
+let pendingReload = false;
+let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 // ---------------------------------------------------------------------------
 // Activation
@@ -44,11 +38,55 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(dashboardCmd);
 
+	// ── File watcher for auto-reload ─────────────────────────
+	setupFileWatcher(context);
+
 	// ── Initial load ─────────────────────────────────────────
 	runLoad(context);
 }
 
-export function deactivate() { }
+export function deactivate() {
+	if (debounceTimer !== undefined) {
+		clearTimeout(debounceTimer);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// File watcher
+// ---------------------------------------------------------------------------
+
+function setupFileWatcher(context: vscode.ExtensionContext) {
+	const config = vscode.workspace.getConfiguration('flakeenv');
+	if (!config.get<boolean>('autoReload', true)) {
+		return;
+	}
+
+	const watcher = vscode.workspace.createFileSystemWatcher('**/flake.nix');
+	const watcherEnvrc = vscode.workspace.createFileSystemWatcher('**/.envrc');
+
+	const scheduleReload = () => {
+		const cfg = vscode.workspace.getConfiguration('flakeenv');
+		const debounceMs = cfg.get<number>('autoReloadDebounceMs', 1000);
+
+		if (debounceTimer !== undefined) {
+			clearTimeout(debounceTimer);
+		}
+		debounceTimer = setTimeout(() => {
+			debounceTimer = undefined;
+			if (isLoading) {
+				pendingReload = true;
+				return;
+			}
+			log('File change detected — reloading environment…');
+			runLoad(context);
+		}, debounceMs);
+	};
+
+	watcher.onDidChange(scheduleReload);
+	watcherEnvrc.onDidChange(scheduleReload);
+
+	context.subscriptions.push(watcher, watcherEnvrc);
+}
 
 // ---------------------------------------------------------------------------
 // Load orchestrator
@@ -56,23 +94,32 @@ export function deactivate() { }
 
 async function runLoad(context: vscode.ExtensionContext): Promise<void> {
 	if (isLoading) {
+		pendingReload = true;
 		DashboardPanel.pushLoading();
-		vscode.window.showWarningMessage('FlakeEnv: already loading, please wait…');
 		return;
 	}
 
 	isLoading = true;
+	pendingReload = false;
 	setStatus('loading', '$(sync~spin) FlakeEnv');
 	DashboardPanel.pushLoading();
 
 	try {
-		const result = await loadEnvironment(context, log);
+		const config = vscode.workspace.getConfiguration('flakeenv');
+		const loadConfig: LoadConfig = {
+			additionalBlockedVars: config.get<string[]>('additionalBlockedVars', []),
+			additionalBlockedPrefixes: config.get<string[]>('additionalBlockedPrefixes', []),
+			execTimeoutMs: config.get<number>('execTimeoutMs', 120000),
+		};
+		const result = await loadEnvironment(context, log, loadConfig);
 		applyStatus(result);
 
 		// Restart language servers that may have started before the
 		// environment was ready (e.g. rust-analyzer without cargo in PATH).
 		if (result.status === 'ok' && result.injected.length > 0) {
-			await restartLanguageServers(log);
+			const userServers = config.get<LanguageServer[]>('languageServers', []);
+			const servers = getLanguageServers(userServers);
+			await restartLanguageServers(servers, log);
 		}
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
@@ -81,6 +128,11 @@ async function runLoad(context: vscode.ExtensionContext): Promise<void> {
 		setStatus('error', '$(warning) FlakeEnv');
 	} finally {
 		isLoading = false;
+		// If a reload was queued while we were loading, run it now
+		if (pendingReload) {
+			pendingReload = false;
+			runLoad(context);
+		}
 	}
 }
 
@@ -88,8 +140,7 @@ function applyStatus(result: EnvironmentResult): void {
 	switch (result.status) {
 		case 'ok':
 			setStatus('ok', `$(check) FlakeEnv: ${result.injected.length} vars`);
-			statusBarItem.tooltip =
-				`FlakeEnv: ${result.injected.length} vars (nix: ${result.nixCount}, direnv: ${result.direnvCount})\nClick to open dashboard`;
+			statusBarItem.tooltip = `FlakeEnv: ${result.injected.length} vars (nix: ${result.nixCount}, direnv: ${result.direnvCount})\nClick to open dashboard`;
 			break;
 		case 'error':
 			vscode.window.showWarningMessage(`FlakeEnv: ${result.errorMessage ?? 'Unknown error'}`);
@@ -114,32 +165,6 @@ function log(msg: string) {
 function setStatus(state: 'loading' | 'ok' | 'error', text: string) {
 	statusBarItem.text = text;
 	statusBarItem.backgroundColor =
-		state === 'error'
-			? new vscode.ThemeColor('statusBarItem.warningBackground')
-			: undefined;
+		state === 'error' ? new vscode.ThemeColor('statusBarItem.warningBackground') : undefined;
 	statusBarItem.show();
-}
-
-// ---------------------------------------------------------------------------
-// Language server restart
-// ---------------------------------------------------------------------------
-
-async function restartLanguageServers(log: (msg: string) => void): Promise<void> {
-	// Brief delay to let language servers finish their initial (failed) startup
-	// before we ask them to restart with the corrected environment.
-	await new Promise(resolve => setTimeout(resolve, 1500));
-
-	for (const { extensionId, command, name } of KNOWN_LANGUAGE_SERVERS) {
-		const ext = vscode.extensions.getExtension(extensionId);
-		if (!ext) {
-			continue;
-		}
-
-		try {
-			await vscode.commands.executeCommand(command);
-			log(`↻ Restarted ${name} to pick up new environment.`);
-		} catch {
-			log(`⚠ Could not restart ${name} (command "${command}" unavailable).`);
-		}
-	}
 }
