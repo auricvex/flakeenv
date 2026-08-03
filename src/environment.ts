@@ -149,7 +149,7 @@ export async function loadEnvironment(
 			} else {
 				log(`flake.nix detected — running \`${nixBin} print-dev-env . --json\` …`);
 
-				const result = await runCommand(nixBin, ['print-dev-env', '.', '--json'], {
+				const result = await runCommand(nixBin, ['print-dev-env', 'path:.', '--json'], {
 					cwd: root,
 					env: { ...hostBaselineEnv, ...enrichPath(NIX_SEARCH_PATHS) },
 					timeout: execTimeout,
