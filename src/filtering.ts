@@ -32,7 +32,7 @@ export const BLOCKED_VARS = new Set([
 ]);
 
 /** Prefixes that mark transient nix-build internals or VS Code internals. */
-export const BLOCKED_PREFIXES = ['__', 'NIX_BUILD_', 'IN_NIX_SHELL', 'VSCODE_'];
+export const BLOCKED_PREFIXES = ['__', 'IN_NIX_SHELL', 'VSCODE_'];
 
 export function shouldSkipVar(
 	key: string,

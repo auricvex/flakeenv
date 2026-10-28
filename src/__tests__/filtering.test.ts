@@ -10,7 +10,6 @@ describe('shouldSkipVar', () => {
 
 	it('blocks variables with blocked prefixes', () => {
 		expect(shouldSkipVar('__NIX_DARWIN_SET_ENVIRONMENT_DONE')).toBe(true);
-		expect(shouldSkipVar('NIX_BUILD_CORES')).toBe(true);
 		expect(shouldSkipVar('IN_NIX_SHELL')).toBe(true);
 		expect(shouldSkipVar('VSCODE_GIT_IPC_HANDLE')).toBe(true);
 	});
@@ -44,7 +43,6 @@ describe('getSkipReason', () => {
 
 	it('returns correct reason for blocked prefixes', () => {
 		expect(getSkipReason('__NIX_SOME_VAR')).toBe('Blocked prefix: __*');
-		expect(getSkipReason('NIX_BUILD_CORES')).toBe('Blocked prefix: NIX_BUILD_*');
 		expect(getSkipReason('IN_NIX_SHELL')).toBe('Blocked prefix: IN_NIX_SHELL*');
 		expect(getSkipReason('VSCODE_SOME_SETTING')).toBe('Blocked prefix: VSCODE_*');
 	});

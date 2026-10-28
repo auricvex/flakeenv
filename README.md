@@ -81,7 +81,7 @@ FlakeEnv blocks variables that are usually unsafe or noisy to inject into VS Cod
 
 - Shell and user identity variables such as `HOME`, `USER`, `SHELL`, and `PWD`.
 - VS Code and Electron internals such as `VSCODE_*` and `ELECTRON_RUN_AS_NODE`.
-- Nix build internals such as `__*`, `NIX_BUILD_*`, and `IN_NIX_SHELL`.
+- Nix build internals such as `__*` and `IN_NIX_SHELL`.
 
 Skipped variables are still visible in the dashboard with their skip reason.
 
